@@ -1,0 +1,3 @@
+rootProject.name = "EventLiveDataSample"
+include ':app'
+include ':eventlivedata'
