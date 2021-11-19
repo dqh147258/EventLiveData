@@ -6,8 +6,8 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import com.yxf.eventlivedata.EventLiveData
-import com.yxf.eventlivedata.EventLiveData.NO_STICKY
-import com.yxf.eventlivedata.EventLiveData.STICKY_FOREVER
+import com.yxf.eventlivedata.EventLiveData.*
+
 
 class MainActivity : AppCompatActivity() {
 
@@ -17,6 +17,8 @@ class MainActivity : AppCompatActivity() {
     private val stickyCountEvent = EventLiveData<Int>(1, true)
     private val activeForeverEvent = EventLiveData<Int>(STICKY_FOREVER, true)
     private val notForeverEvent = EventLiveData<Int>(STICKY_FOREVER, false)
+    private val sendOnceEvent = EventLiveData<Int>(SEND_ONCE, false)
+    private val sendOnceEvent2 = EventLiveData<Int>(SEND_ONCE, true)
 
     private val TAG = "EventLiveData"
 
@@ -27,6 +29,24 @@ class MainActivity : AppCompatActivity() {
         testNoStickyEvent()
         testStickyCount()
         testActiveForever()
+        testSendOnce()
+    }
+
+    private fun testSendOnce() {
+        sendOnceEvent.observe(this) {
+            Log.d(TAG, "testSendOnce: event one, first observer, state: ${lifecycle.currentState}")
+        }
+        sendOnceEvent.value = 1
+        sendOnceEvent.observe(this) {
+            Log.d(TAG, "testSendOnce: event one ,second observer, state: ${lifecycle.currentState}")
+        }
+        sendOnceEvent2.observe(this) {
+            Log.d(TAG, "testSendOnce: event two, first observer, state: ${lifecycle.currentState}")
+        }
+        sendOnceEvent2.value = 1
+        sendOnceEvent2.observe(this) {
+            Log.d(TAG, "testSendOnce: event two, second observer, state: ${lifecycle.currentState}")
+        }
     }
 
     private fun testActiveForever() {

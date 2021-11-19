@@ -37,6 +37,7 @@ import java.util.Map;
 public class EventLiveData<T> extends MutableLiveData<T> {
 
 
+    public static final int SEND_ONCE = -2;
     public static final int STICKY_FOREVER = -1;
     public static final int NO_STICKY = 0;
 
@@ -75,6 +76,9 @@ public class EventLiveData<T> extends MutableLiveData<T> {
         }
     };
 
+    private boolean mShouldStickyOnce = false;
+    private boolean mInSetValue = false;
+
     private int mStickyCount = STICKY_FOREVER;
     private int mLeftStickCount = 0;
 
@@ -107,15 +111,27 @@ public class EventLiveData<T> extends MutableLiveData<T> {
         }
     }
 
-    private void removeDataIfLeftStickCountLessThanOne() {
+    private void afterNotify() {
         if (mStickyCount > 0 && mLeftStickCount < 1) {
             mData = NOT_SET;
+        } else if (mStickyCount == SEND_ONCE) {
+            if (mShouldStickyOnce) {
+                if (mInSetValue) {
+                    mShouldStickyOnce = false;
+                } else {
+                    mData = NOT_SET;
+                }
+            }
         }
     }
 
-    private void removeDataIfNoSticky() {
+    private void afterSetValue() {
         if (mStickyCount == NO_STICKY) {
             mData = NOT_SET;
+        } else if (mStickyCount == SEND_ONCE) {
+            if (!mShouldStickyOnce) {
+                mData = NOT_SET;
+            }
         }
     }
 
@@ -138,7 +154,7 @@ public class EventLiveData<T> extends MutableLiveData<T> {
         observer.mLastVersion = mVersion;
         //noinspection unchecked
         observer.mObserver.onChanged((T) mData);
-        removeDataIfLeftStickCountLessThanOne();
+        afterNotify();
     }
 
     @SuppressWarnings("WeakerAccess") /* synthetic access */
@@ -311,11 +327,18 @@ public class EventLiveData<T> extends MutableLiveData<T> {
     private void setValueInternal(T value) {
         mVersion++;
         mData = value;
-        if (mStickyCount > 0) {
-            mLeftStickCount = mStickyCount;
+        mInSetValue = true;
+        try {
+            if (mStickyCount > 0) {
+                mLeftStickCount = mStickyCount;
+            } else if (mStickyCount == SEND_ONCE) {
+                mShouldStickyOnce = true;
+            }
+            dispatchingValue(null);
+        } finally {
+            mInSetValue = false;
         }
-        dispatchingValue(null);
-        removeDataIfNoSticky();
+        afterSetValue();
     }
 
 
