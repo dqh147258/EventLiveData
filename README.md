@@ -1,4 +1,4 @@
-# A event dispatcher for Android.
+# A event bus for Android base on LiveData.
 
 [中文简介](https://www.jianshu.com/p/c7e3ddcb14be)
 
