@@ -182,7 +182,6 @@ public class EventLiveData<T> extends MutableLiveData<T> {
         mDispatchingValue = false;
     }
 
-    @MainThread
     public void observe(@NonNull LifecycleOwner owner, @NonNull Observer<? super T> observer) {
         if (!isMainThread()) {
             postToMainThread(() -> {
@@ -225,7 +224,6 @@ public class EventLiveData<T> extends MutableLiveData<T> {
      *
      * @param observer The observer that will receive the events
      */
-    @MainThread
     public void observeForever(@NonNull Observer<? super T> observer) {
         if (!isMainThread()) {
             postToMainThread(() -> {
@@ -251,7 +249,6 @@ public class EventLiveData<T> extends MutableLiveData<T> {
      *
      * @param observer The Observer to receive events.
      */
-    @MainThread
     public void removeObserver(@NonNull final Observer<? super T> observer) {
         if (!isMainThread()) {
             postToMainThread(() -> {
@@ -273,7 +270,6 @@ public class EventLiveData<T> extends MutableLiveData<T> {
      * @param owner The {@code LifecycleOwner} scope for the observers to be removed.
      */
     @SuppressWarnings("WeakerAccess")
-    @MainThread
     public void removeObservers(@NonNull final LifecycleOwner owner) {
         if (!isMainThread()) {
             postToMainThread(() -> {
@@ -344,6 +340,15 @@ public class EventLiveData<T> extends MutableLiveData<T> {
 
     public void setValue(T value) {
         setValueSync(this, value);
+    }
+
+    /**
+     * 使数据失效,不会触发数据变化事件,如果需要触发可以使用postValue(null)
+     */
+    public void resetValue() {
+        postToMainThread(() -> {
+            mData = NOT_SET;
+        });
     }
 
     /**
