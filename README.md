@@ -50,10 +50,24 @@ Second, register your observer in suitable place.
 
 Third, set value when you want to send a event.
 ```kotlin
+    EventPool.userInfoShouldUpdateEvent.postValue(true)
+```
+or
+```kotlin
     EventPool.userInfoShouldUpdateEvent.value = true
 ```
 
+If you don't need the event trigger directly, suggest call `postValue`, because the `setValue` would block current thread while current thread is not main thread.
+
+If you want reset the value without event trigger, you can just call
+```kotlin
+    EventPool.userInfoShouldUpdateEvent.resetValue()
+```
+
+
 That all.
+
+
 
 ## The parameters of EventLiveData's constructor
 The constructor of EventLiveData has two parameters:
