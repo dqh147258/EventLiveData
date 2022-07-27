@@ -5,6 +5,8 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import com.yxf.eventlivedata.AutoRemoveObserverManager
+import com.yxf.eventlivedata.AutoRemoveObserverManagerDelegate
 import com.yxf.eventlivedata.EventLiveData
 import com.yxf.eventlivedata.EventLiveData.*
 
@@ -19,7 +21,8 @@ class MainActivity : AppCompatActivity() {
     private val notForeverEvent = EventLiveData<Int>(STICKY_FOREVER, false)
     private val sendOnceEvent = EventLiveData<Int>(SEND_ONCE, false)
     private val sendOnceEvent2 = EventLiveData<Int>(SEND_ONCE, true)
-
+    private val autoRemoveEvent = EventLiveData<Int>().apply { value = 0 }
+    private val autoRemoveObserverManager = AutoRemoveObserverManagerDelegate()
     private val TAG = "EventLiveData"
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -30,6 +33,19 @@ class MainActivity : AppCompatActivity() {
         testStickyCount()
         testActiveForever()
         testSendOnce()
+        testAutoRemove()
+    }
+
+    private fun testAutoRemove() {
+        autoRemoveEvent.observe(autoRemoveObserverManager) {
+            Log.d(TAG, "testAutoRemove: the message would not trigger after onPause, value: $it")
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        autoRemoveObserverManager.clearAllObserver()
+        autoRemoveEvent.value = 1
     }
 
     private fun testSendOnce() {

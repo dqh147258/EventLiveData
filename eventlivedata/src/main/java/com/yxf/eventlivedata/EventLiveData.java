@@ -210,6 +210,29 @@ public class EventLiveData<T> extends MutableLiveData<T> {
         owner.getLifecycle().addObserver(wrapper);
     }
 
+    public void observe(@NonNull AutoRemoveObserverManager manager, @NonNull Observer<? super T> observer) {
+        if (!isMainThread()) {
+            postToMainThread(() -> {
+                observe(manager, observer);
+            });
+            return;
+        }
+        AutoRemoveObserver wrapper = new AutoRemoveObserver(manager, observer);
+        ObserverWrapper existing = mObservers.putIfAbsent(observer, wrapper);
+        if (existing != null && !manager.containObserver((AutoRemoveObserver) existing)) {
+            throw new IllegalArgumentException("Cannot add the same observer"
+                    + " with different manager");
+        }
+        if (existing != null) {
+            return;
+        }
+        decreaseStickyCount();
+
+        wrapper.activeStateChanged(true);
+
+        manager.addAutoRemoveObserver(wrapper);
+    }
+
     /**
      * Adds the given observer to the observers list. This call is similar to
      * {@link EventLiveData#observe(LifecycleOwner, Observer)} with a LifecycleOwner, which
@@ -233,7 +256,7 @@ public class EventLiveData<T> extends MutableLiveData<T> {
         }
         AlwaysActiveObserver wrapper = new AlwaysActiveObserver(observer);
         ObserverWrapper existing = mObservers.putIfAbsent(observer, wrapper);
-        if (existing != null && existing instanceof EventLiveData.LifecycleBoundObserver) {
+        if (existing != null && (existing instanceof EventLiveData.LifecycleBoundObserver || existing instanceof EventLiveData.AutoRemoveObserver)) {
             throw new IllegalArgumentException("Cannot add the same observer"
                     + " with different lifecycles");
         }
@@ -486,6 +509,31 @@ public class EventLiveData<T> extends MutableLiveData<T> {
             return true;
         }
     }
+
+    public class AutoRemoveObserver extends ObserverWrapper {
+
+        private AutoRemoveObserverManager autoRemoveObserverManager;
+
+        AutoRemoveObserver(AutoRemoveObserverManager autoRemoveObserverManager, Observer<? super T> observer) {
+            super(observer);
+            this.autoRemoveObserverManager = autoRemoveObserverManager;
+        }
+
+        @Override
+        boolean shouldBeActive() {
+            return true;
+        }
+
+        @Override
+        void detachObserver() {
+            autoRemoveObserverManager.removeAutoRemoveObserver(this);
+        }
+
+        public void remove() {
+            removeObserver(mObserver);
+        }
+    }
+
 
     private static void assertMainThread(String methodName) {
         if (!isMainThread()) {
